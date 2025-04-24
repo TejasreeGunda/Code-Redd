@@ -1,0 +1,45 @@
+app.py - Main application setup
+
+import os import logging from flask import Flask from flask_sqlalchemy import SQLAlchemy from flask_login import LoginManager
+
+Setup logging
+
+logging.basicConfig(level=logging.DEBUG)
+
+Setup Flask app
+
+app = Flask(name) app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
+
+Setup database
+
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL") app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False app.config["SQLALCHEMY_ENGINE_OPTIONS"] = { "pool_recycle": 300, "pool_pre_ping": True, }
+
+Initialize database and login manager
+
+db = SQLAlchemy(app) login_manager = LoginManager() login_manager.init_app(app) login_manager.login_view = 'login'
+
+Import models to ensure tables are created
+
+from models import Student, Admin, Content, Progress, Exam, Question, ExamResponse, QuestionResponse, Certificate
+
+@login_manager.user_loader def load_user(user_id): admin = Admin.query.get(int(user_id)) if admin: return admin return Student.query.get(int(user_id))
+
+Import routes at the end to avoid circular imports
+
+import routes
+
+Create database tables
+
+with app.app_context(): db.create_all()
+
+Main entry point
+
+if name == "main": app.run(host='0.0.0.0', port=5000, debug=True)
+
+Additional run file
+
+run.py
+
+from app import app
+
+if name == "main": app.run(host='0.0.0.0', port=5000, debug=True)
